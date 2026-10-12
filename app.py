@@ -4,42 +4,74 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Student Performance Prediction",
+    page_title="Student Performance AI",
     page_icon="🎓",
     layout="wide"
 )
 
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(135deg, #f5f7ff, #eef4ff);
+}
+.block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+}
+.hero {
+    background: linear-gradient(120deg, #172554, #2563eb, #6366f1);
+    padding: 30px;
+    border-radius: 20px;
+    color: white;
+    margin-bottom: 25px;
+}
+.hero h1 {
+    color: white;
+    font-size: 2.2rem;
+}
+.hero p {
+    color: #e0e7ff;
+}
+.result-card {
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    padding: 25px;
+    border-radius: 18px;
+    margin-top: 20px;
+}
+.result-value {
+    color: #166534;
+    font-size: 2.8rem;
+    font-weight: 800;
+}
+[data-testid="stMetric"] {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    border-radius: 14px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 @st.cache_resource
 def load_model():
-    with open("KNN_regression.pkl", "rb") as file:
-        return pickle.load(file)
+    with open("KNN_regression.pkl", "rb") as f:
+        return pickle.load(f)
 
 
-model = load_model()
+try:
+    model = load_model()
+except FileNotFoundError:
+    st.error("Please keep KNN_regression.pkl in the same folder as app.py.")
+    st.stop()
 
-st.title("🎓 Student Performance Prediction")
-st.write("Enter student details to predict the result.")
 
-st.divider()
-
-# Categorical value mappings
-# IMPORTANT: Confirm these codes against your training data.
-gender_map = {
-    "Female": 0,
-    "Male": 1
-}
-
-course_map = {
-    "Arts": 0,
-    "Commerce": 1,
-    "Science": 2
-}
-
-internet_map = {
-    "No": 0,
-    "Yes": 1
-}
+# IMPORTANT: Replace these example mappings with your
+# actual categorical encodings used during model training.
+gender_map = {"Female": 0, "Male": 1}
+course_map = {"Arts": 0, "Commerce": 1, "Science": 2}
+internet_map = {"No": 0, "Yes": 1}
 
 sleep_quality_map = {
     "Average": 0,
@@ -66,103 +98,117 @@ exam_difficulty_map = {
     "Moderate": 2
 }
 
+
+# Sidebar
+with st.sidebar:
+    st.title("🎓 Student AI")
+    st.caption("KNN Regression Dashboard")
+    st.divider()
+    st.markdown("### How to use")
+    st.write("1. Enter student details.")
+    st.write("2. Select study habits.")
+    st.write("3. Click Predict.")
+    st.divider()
+    st.caption("Powered by Python and Streamlit")
+
+
+# Main header
+st.markdown("""
+<div class="hero">
+    <h1>🎓 Student Performance Predictor</h1>
+    <p>Enter student details and explore your machine learning prediction.</p>
+</div>
+""", unsafe_allow_html=True)
+
+c1, c2, c3 = st.columns(3)
+c1.metric("ML Algorithm", "KNN Regression")
+c2.metric("Input Features", "11")
+c3.metric("Output", "Prediction")
+
+
 # Input form
-with st.form("student_form"):
+with st.form("prediction_form"):
 
-    st.subheader("Personal Information")
+    st.subheader("👤 Personal Details")
 
-    col1, col2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
 
-    with col1:
+    with c1:
         age = st.number_input(
-            "Age",
-            min_value=1,
-            max_value=100,
-            value=20
+            "Age", min_value=1, max_value=100, value=20
         )
 
+    with c2:
         gender = st.selectbox(
-            "Gender",
-            list(gender_map.keys())
+            "Gender", list(gender_map.keys())
         )
 
-    with col2:
+    with c3:
         course = st.selectbox(
-            "Course",
-            list(course_map.keys())
+            "Course", list(course_map.keys())
         )
 
-        internet_access = st.selectbox(
-            "Internet Access",
-            list(internet_map.keys())
-        )
+    st.divider()
+    st.subheader("📚 Study Habits")
 
-    st.subheader("Study Information")
+    c1, c2, c3 = st.columns(3)
 
-    col3, col4 = st.columns(2)
-
-    with col3:
+    with c1:
         study_hours = st.number_input(
-            "Study Hours",
-            min_value=0.0,
-            max_value=24.0,
-            value=3.0,
-            step=0.5
-        )
-
-        attendance = st.number_input(
-            "Class Attendance (%)",
-            min_value=0.0,
-            max_value=100.0,
-            value=75.0,
-            step=1.0
-        )
-
-        sleep_hours = st.number_input(
-            "Sleep Hours",
-            min_value=0.0,
-            max_value=24.0,
-            value=7.0,
-            step=0.5
-        )
-
-    with col4:
-        sleep_quality = st.selectbox(
-            "Sleep Quality",
-            list(sleep_quality_map.keys())
+            "Study Hours Per Day",
+            min_value=0.0, max_value=24.0,
+            value=3.0, step=0.5
         )
 
         study_method = st.selectbox(
-            "Study Method",
-            list(study_method_map.keys())
+            "Study Method", list(study_method_map.keys())
         )
 
-    st.subheader("Exam and Facility Information")
+    with c2:
+        attendance = st.slider(
+            "Attendance (%)", 0.0, 100.0, 75.0
+        )
 
-    col5, col6 = st.columns(2)
+        internet_access = st.selectbox(
+            "Internet Access", list(internet_map.keys())
+        )
 
-    with col5:
+    with c3:
+        sleep_hours = st.number_input(
+            "Sleep Hours Per Day",
+            min_value=0.0, max_value=24.0,
+            value=7.0, step=0.5
+        )
+
+        sleep_quality = st.selectbox(
+            "Sleep Quality", list(sleep_quality_map.keys())
+        )
+
+    st.divider()
+    st.subheader("📝 Exam and Facilities")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
         facility_rating = st.selectbox(
-            "Facility Rating",
-            list(facility_map.keys())
+            "Facility Rating", list(facility_map.keys())
         )
 
-    with col6:
+    with c2:
         exam_difficulty = st.selectbox(
-            "Exam Difficulty",
-            list(exam_difficulty_map.keys())
+            "Exam Difficulty", list(exam_difficulty_map.keys())
         )
 
     submitted = st.form_submit_button(
-        "Predict Student Result",
+        "✨ Predict Student Result",
         type="primary",
         use_container_width=True
     )
 
 
+# Prediction
 if submitted:
 
-    # Convert selected text values to numeric codes
     input_data = pd.DataFrame([{
         "age": age,
         "gender": gender_map[gender],
@@ -180,18 +226,32 @@ if submitted:
     try:
         prediction = model.predict(input_data)[0]
 
-        st.divider()
-        st.subheader("Prediction Result")
+        st.markdown(f"""
+        <div class="result-card">
+            <h3>✅ Prediction Result</h3>
+            <div class="result-value">{prediction:.2f}</div>
+            <p>Predicted value from your KNN regression model</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.success("Prediction completed successfully!")
+        st.subheader("📋 Student Summary")
 
-        st.metric(
-            label="Predicted Student Result",
-            value=f"{prediction:.2f}"
-        )
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Age", str(age))
+        c2.metric("Study Hours", f"{study_hours:g} hrs/day")
+        c3.metric("Attendance", f"{attendance:g}%")
 
-        with st.expander("View input data sent to the model"):
+        with st.expander("View model input values"):
             st.dataframe(input_data, use_container_width=True)
 
-    except Exception as error:
-        st.error(f"Prediction failed: {error}")
+        st.info(
+            "The result is a model prediction, not a guarantee "
+            "of actual student performance."
+        )
+
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
+        st.warning(
+            "Check that feature names, feature order, and categorical "
+            "encodings match your original training data."
+        )
